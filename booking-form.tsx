@@ -324,7 +324,7 @@ export default function BookingForm() {
   BOOKINGS.push(newBooking)
 
   // ➤ Hier wird an Google Sheets geschickt + Bestätigungsmail versendet
-  fetch("https://script.google.com/macros/s/AKfycbxnxy-Y9GgffR8m94Z1B8M_DLOp2o6fctKuYjGETvaBS5JivkzPY6FzFHLM2oLRAYQc/exec", {
+  fetch("/api/booking", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
