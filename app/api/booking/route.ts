@@ -30,38 +30,39 @@ export async function POST(request: Request) {
     }
   }
   
-  // 👉 Formatierung von Google Sheets Datumseintrag
   function formatDate(value: any): string {
-    if (typeof value === 'string') {
-      const match = /Date\((\d+),(\d+),(\d+)\)/.exec(value);
-      if (match) {
-        const [, year, month, day] = match.map(Number);
-        return `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-      }
-    }
     const date = new Date(value);
-    return date.toISOString().split('T')[0]; // z.B. 2025-05-17
+    return date.toISOString().split('T')[0]; // z.B. "2025-05-17"
   }
   
-  // 👉 Formatierung von Uhrzeit aus Google Sheets (Zeitwert als Dezimalzahl)
   function formatTime(value: any): string {
     if (typeof value === 'string') {
-      const match = /Date\((\d+),(\d+),(\d+),(\d+),(\d+)\)/.exec(value);
-      if (match) {
-        const [, , , , hours, minutes] = match.map(Number);
-        return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
-      }
+      // z.B. "08:00:00" → "08:00"
+      return value.slice(0, 5);
     }
   
     if (typeof value === 'number') {
+      // z.B. Excel-Zeitwert (z.B. 0.333...) für 08:00 Uhr
       const totalMinutes = Math.round(value * 24 * 60);
-      const hours = Math.floor(totalMinutes / 60);
-      const minutes = totalMinutes % 60;
-      return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+      const hours = Math.floor(totalMinutes / 60).toString().padStart(2, '0');
+      const minutes = (totalMinutes % 60).toString().padStart(2, '0');
+      return `${hours}:${minutes}`;
+    }
+  
+    if (typeof value === 'object' && value instanceof Date) {
+      return value.toTimeString().slice(0, 5);
+    }
+  
+    // 🛠️ Sonderfall: Google Sheets liefert manchmal eine Pseudo-Date im Format: { v: Date(2025,4,17,8,0,0) }
+    if (typeof value === 'object' && value?.getHours) {
+      const hours = value.getHours().toString().padStart(2, '0');
+      const minutes = value.getMinutes().toString().padStart(2, '0');
+      return `${hours}:${minutes}`;
     }
   
     return '';
   }
+  
   
   export async function GET() {
     try {
@@ -74,8 +75,6 @@ export async function POST(request: Request) {
   
       const json = JSON.parse(text.substring(47).slice(0, -2));
       const rows = json.table.rows;
-      console.log("RAW ROWS:", JSON.stringify(rows, null, 2));
-
   
       const bookings = rows.map((row: any) => ({
         fahrzeug: row.c[0]?.v || '',
