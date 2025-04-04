@@ -30,18 +30,33 @@ export async function POST(request: Request) {
   }
 }
 
+// Unterstützt normale JS-Date-Objekte UND "Date(2025,4,17)"-Strings
 function formatDate(value: any): string {
-  try {
-    const date = new Date(value);
-    return date.toISOString().split('T')[0]; // z.B. "2025-05-17"
-  } catch {
+  if (typeof value === 'string' && value.startsWith('Date(')) {
+    const match = /Date\((\d+),(\d+),(\d+)\)/.exec(value);
+    if (match) {
+      const [, year, month, day] = match.map(Number);
+      return `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    }
     return '';
   }
+
+  const date = new Date(value);
+  return date.toISOString().split('T')[0]; // fallback z. B. "2025-05-17"
 }
 
 function formatTime(value: any): string {
+  if (typeof value === 'string' && value.startsWith('Date(')) {
+    const match = /Date\((\d+),(\d+),(\d+),(\d+),(\d+),?(\d+)?\)/.exec(value);
+    if (match) {
+      const [, , , , hours, minutes] = match.map(Number);
+      return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+    }
+    return '';
+  }
+
   if (typeof value === 'string') {
-    return value.slice(0, 5);
+    return value.slice(0, 5); // z.B. "08:00:00" → "08:00"
   }
 
   if (typeof value === 'number') {
@@ -70,22 +85,12 @@ export async function GET() {
     const json = JSON.parse(text.substring(47).slice(0, -2));
     const rows = json.table.rows;
 
-    const bookings = rows
-      .filter((row: any) => row.c) // ⛔ leere Zeilen überspringen
-      .map((row: any) => {
-        try {
-          return {
-            fahrzeug: row.c[0]?.v || '',
-            flugart: row.c[1]?.v || '',
-            datum: row.c[2]?.v ? formatDate(row.c[2].v) : '',
-            uhrzeit: row.c[3]?.v ? formatTime(row.c[3].v) : '',
-          };
-        } catch (innerError) {
-          console.warn('Fehler beim Verarbeiten einer Zeile:', innerError);
-          return null;
-        }
-      })
-      .filter(Boolean); // nulls rausfiltern
+    const bookings = rows.map((row: any) => ({
+      fahrzeug: row.c[0]?.v || '',
+      flugart: row.c[1]?.v || '',
+      datum: row.c[2]?.v ? formatDate(row.c[2].v) : '',
+      uhrzeit: row.c[3]?.v ? formatTime(row.c[3].v) : '',
+    }));
 
     return new Response(JSON.stringify(bookings), {
       status: 200,

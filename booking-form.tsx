@@ -90,9 +90,6 @@ const VEHICLES = [
 ]
 
 const FLIGHTS = [
-  { value: "erlebnisflug-pipistrel-elektro", label: "Erlebnisflug Pipistrel Elektro – 50 CHF", type: "regular" },
-  { value: "erlebnisflug-pipistrel-verbrenner", label: "Erlebnisflug Pipistrel Verbrenner – 75 CHF", type: "regular" },
-  { value: "erlebnisflug-bristel-b23", label: "Erlebnisflug Bristel B23 – 100 CHF", type: "regular" },
   { value: "schnupperflug-pipistrel-elektro", label: "Schnupperflug Pipistrel Elektro – 50 CHF", type: "regular" },
   {
     value: "schnupperflug-pipistrel-verbrenner",
@@ -190,82 +187,82 @@ export default function BookingForm() {
 
   // Get available time slots for vehicles
   const getAvailableVehicleSlots = (date: string, vehicle: string) => {
-    // Filter out slots that are already booked for this vehicle
     return VEHICLE_TIME_SLOTS.filter((slot) => {
       const isBooked = BOOKINGS.some(
-        (booking) => booking.date === date && booking.time === slot.value && booking.vehicle === vehicle,
-      )
-      return !isBooked
-    })
+        (booking) =>
+          booking.datum === date &&
+          booking.uhrzeit === slot.value &&
+          booking.fahrzeug === vehicle
+      );
+      return !isBooked;
+    });
+  };
+  
+    
   }
 
-  // Get available time slots for flights
   const getAvailableFlightSlots = (date: string, flightType: string, flightValue: string) => {
-    // Check date restrictions for helicopter flights
     if (flightValue === "schnupperflug-helikopter" && date !== "17.05.2025") {
-      return [] // Schnupperflug Helikopter only available on 17.05.2025
+      return [];
     }
-
+  
     if (flightValue === "erlebnisflug-helikopter" && date !== "18.05.2025") {
-      return [] // Erlebnisflug Helikopter only available on 18.05.2025
+      return [];
     }
-
+  
     if (flightType === "tandem") {
-      // For tandem flights, use predefined slots
-      const tandemSlots = TANDEM_SLOTS[date as keyof typeof TANDEM_SLOTS] || []
-
-      // Filter out slots that already have 4 bookings
+      const tandemSlots = TANDEM_SLOTS[date as keyof typeof TANDEM_SLOTS] || [];
+  
       return tandemSlots
         .filter((time) => {
-          const bookingsForSlot = BOOKINGS.filter((b) => b.date === date && b.time === time && b.flight === flightValue)
-          const totalBookings = bookingsForSlot.reduce((sum, b) => sum + (b.count || 1), 0)
-          return totalBookings < 4
+          const bookingsForSlot = BOOKINGS.filter(
+            (b) => b.date === date && b.time === time && b.flight === flightValue
+          );
+          const totalBookings = bookingsForSlot.reduce((sum, b) => sum + (b.count || 1), 0);
+          return totalBookings < 4;
         })
-        .map((time) => ({ value: time, label: time }))
-    } else if (flightType === "helicopter") {
-      // For helicopter experience flights, check if slots are available (max 3 per slot)
-      return REGULAR_TIME_SLOTS.filter((slot) => {
-        // Check if this slot is blocked by tandem flights (2 hour window)
-        const isBlockedByTandem = BOOKINGS.some((booking) => {
-          if (booking.date !== date || !booking.flight) return false
-
-          const tandemFlight = FLIGHTS.find((f) => f.value === booking.flight)
-          if (tandemFlight?.type !== "tandem") return false
-
-          // Check if this slot is within 2 hours of a tandem flight
-          const bookingHour = Number.parseInt(booking.time.split(":")[0])
-          const bookingMinute = Number.parseInt(booking.time.split(":")[1])
-          const slotHour = Number.parseInt(slot.value.split(":")[0])
-          const slotMinute = Number.parseInt(slot.value.split(":")[1])
-
-          const bookingTimeInMinutes = bookingHour * 60 + bookingMinute
-          const slotTimeInMinutes = slotHour * 60 + slotMinute
-
-          return Math.abs(bookingTimeInMinutes - slotTimeInMinutes) < 120
-        })
-
-        if (isBlockedByTandem) return false
-
-        // Check if this slot already has 3 bookings for helicopter experience flights
-        const bookingsForSlot = BOOKINGS.filter(
-          (b) => b.date === date && b.time === slot.value && b.flight === flightValue,
-        )
-        const totalBookings = bookingsForSlot.reduce((sum, b) => sum + (b.count || 1), 0)
-
-        return totalBookings < 3
-      })
-    } else {
-      // For regular flights, check if the slot is available
-      return REGULAR_TIME_SLOTS.filter((slot) => {
-        // Check if this slot is already booked
-        const isBooked = BOOKINGS.some(
-          (booking) => booking.date === date && booking.time === slot.value && booking.flight === flightValue,
-        )
-
-        return !isBooked
-      })
+        .map((time) => ({ value: time, label: time }));
     }
-  }
+  
+    if (flightType === "helicopter") {
+      return REGULAR_TIME_SLOTS.filter((slot) => {
+        const isBlockedByTandem = BOOKINGS.some((booking) => {
+          if (booking.date !== date || !booking.flight) return false;
+  
+          const tandemFlight = FLIGHTS.find((f) => f.value === booking.flight);
+          if (tandemFlight?.type !== "tandem") return false;
+  
+          const bookingHour = Number.parseInt(booking.time.split(":")[0]);
+          const bookingMinute = Number.parseInt(booking.time.split(":")[1]);
+          const slotHour = Number.parseInt(slot.value.split(":")[0]);
+          const slotMinute = Number.parseInt(slot.value.split(":")[1]);
+  
+          const bookingTimeInMinutes = bookingHour * 60 + bookingMinute;
+          const slotTimeInMinutes = slotHour * 60 + slotMinute;
+  
+          return Math.abs(bookingTimeInMinutes - slotTimeInMinutes) < 120;
+        });
+  
+        if (isBlockedByTandem) return false;
+  
+        const bookingsForSlot = BOOKINGS.filter(
+          (b) => b.date === date && b.time === slot.value && b.flight === flightValue
+        );
+        const totalBookings = bookingsForSlot.reduce((sum, b) => sum + (b.count || 1), 0);
+  
+        return totalBookings < 3;
+      }).map((slot) => ({ value: slot.value, label: slot.label }));
+    }
+  
+    // Für alle anderen (regulären) Flüge
+    return REGULAR_TIME_SLOTS.filter((slot) => {
+      const isBooked = BOOKINGS.some(
+        (booking) => booking.date === date && booking.time === slot.value && booking.flight === flightValue
+      );
+      return !isBooked;
+    }).map((slot) => ({ value: slot.value, label: slot.label }));
+  };
+  
 
   // Check if a flight is available on the selected date
   const isFlightAvailableOnDate = (flightValue: string, date: string) => {
