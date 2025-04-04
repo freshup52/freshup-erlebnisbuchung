@@ -30,6 +30,16 @@ export async function POST(request: Request) {
     }
   }
   
+  function formatDate(value: any): string {
+    const date = new Date(value);
+    return date.toISOString().split('T')[0]; // z.B. "2025-05-17"
+  }
+  
+  function formatTime(value: any): string {
+    const date = new Date(value);
+    return date.toTimeString().slice(0, 5); // z.B. "08:00"
+  }
+  
   export async function GET() {
     try {
       const sheetId = '1lO0Hm740XbVbVulF6bx_UtklvGH3H2ey1I-UBblW1oQ';
@@ -45,8 +55,8 @@ export async function POST(request: Request) {
       const bookings = rows.map((row: any) => ({
         fahrzeug: row.c[0]?.v || '',
         flugart: row.c[1]?.v || '',
-        datum: row.c[2]?.v || '',
-        uhrzeit: row.c[3]?.v || '',
+        datum: row.c[2]?.v ? formatDate(row.c[2].v) : '',
+        uhrzeit: row.c[3]?.v ? formatTime(row.c[3].v) : '',
       }));
   
       return new Response(JSON.stringify(bookings), {
