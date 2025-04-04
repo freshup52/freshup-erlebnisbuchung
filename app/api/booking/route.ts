@@ -30,25 +30,38 @@ export async function POST(request: Request) {
     }
   }
   
+  // 👉 Formatierung von Google Sheets Datumseintrag
   function formatDate(value: any): string {
-    // z.B. value = { v: "Date(2025,4,17)" }
-    const match = /Date\((\d+),(\d+),(\d+)\)/.exec(value);
-    if (match) {
-      const [, year, month, day] = match.map(Number);
-      return `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    if (typeof value === 'string') {
+      const match = /Date\((\d+),(\d+),(\d+)\)/.exec(value);
+      if (match) {
+        const [, year, month, day] = match.map(Number);
+        return `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+      }
     }
-    return '';
+    const date = new Date(value);
+    return date.toISOString().split('T')[0]; // z.B. 2025-05-17
   }
   
+  // 👉 Formatierung von Uhrzeit aus Google Sheets (Zeitwert als Dezimalzahl)
   function formatTime(value: any): string {
-    const match = /Date\((\d+),(\d+),(\d+),(\d+),(\d+)\)/.exec(value);
-    if (match) {
-      const [, , , , hour, minute] = match.map(Number);
-      return `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
+    if (typeof value === 'string') {
+      const match = /Date\((\d+),(\d+),(\d+),(\d+),(\d+)\)/.exec(value);
+      if (match) {
+        const [, , , , hours, minutes] = match.map(Number);
+        return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+      }
     }
+  
+    if (typeof value === 'number') {
+      const totalMinutes = Math.round(value * 24 * 60);
+      const hours = Math.floor(totalMinutes / 60);
+      const minutes = totalMinutes % 60;
+      return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+    }
+  
     return '';
   }
-  
   
   export async function GET() {
     try {
