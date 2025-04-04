@@ -74,6 +74,8 @@ export async function POST(request: Request) {
   
       const json = JSON.parse(text.substring(47).slice(0, -2));
       const rows = json.table.rows;
+      console.log("RAW ROWS:", JSON.stringify(rows, null, 2));
+
   
       const bookings = rows.map((row: any) => ({
         fahrzeug: row.c[0]?.v || '',
