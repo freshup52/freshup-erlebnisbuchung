@@ -31,14 +31,24 @@ export async function POST(request: Request) {
   }
   
   function formatDate(value: any): string {
-    const date = new Date(value);
-    return date.toISOString().split('T')[0]; // z.B. "2025-05-17"
+    // z.B. value = { v: "Date(2025,4,17)" }
+    const match = /Date\((\d+),(\d+),(\d+)\)/.exec(value);
+    if (match) {
+      const [, year, month, day] = match.map(Number);
+      return `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    }
+    return '';
   }
   
   function formatTime(value: any): string {
-    const date = new Date(value);
-    return date.toTimeString().slice(0, 5); // z.B. "08:00"
+    const match = /Date\((\d+),(\d+),(\d+),(\d+),(\d+)\)/.exec(value);
+    if (match) {
+      const [, , , , hour, minute] = match.map(Number);
+      return `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
+    }
+    return '';
   }
+  
   
   export async function GET() {
     try {
