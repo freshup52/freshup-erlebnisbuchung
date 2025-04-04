@@ -3,7 +3,7 @@ export async function POST(request: Request) {
       const data = await request.json();
   
       const response = await fetch(
-        'https://script.google.com/macros/s/AKfycbyxuSErzuHRwa_f38qyo5RGVVAHVJXWChQPeQHRrmDiQ4Wig5bX3ekblTwxSN09jCgg/exec',
+        'https://script.google.com/macros/s/AKfycbxqPJZMA1k4h8EkKSOOYSzEGc2JzlEw6_rnqjvNDlJoEe9Gdd2A3Eb_s6dNnae-1T9F/exec',
         {
           method: 'POST',
           headers: {
@@ -39,7 +39,6 @@ export async function POST(request: Request) {
       const response = await fetch(url);
       const text = await response.text();
   
-      // Google Sheets gibt JSONP zurück, daher muss das "geparst" werden
       const json = JSON.parse(text.substring(47).slice(0, -2));
       const rows = json.table.rows;
   
